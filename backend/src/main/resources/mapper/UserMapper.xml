@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yolo.garbage.dao.UserMapper">
+    <resultMap id="UserResultMap" type="com.yolo.garbage.model.User">
+        <id column="id" property="id" />
+        <result column="username" property="username" />
+        <result column="password" property="password" />
+        <result column="role" property="role" />
+        <result column="avatar" property="avatar" />
+        <result column="create_time" property="createTime" />
+    </resultMap>
+
+    <select id="selectAll" resultMap="UserResultMap">
+        SELECT id, username, password, role, avatar, create_time
+        FROM users
+        ORDER BY id
+    </select>
+
+    <select id="selectById" parameterType="java.lang.Integer" resultMap="UserResultMap">
+        SELECT id, username, password, role, avatar, create_time
+        FROM users
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectByUsername" parameterType="java.lang.String" resultMap="UserResultMap">
+        SELECT id, username, password, role, avatar, create_time
+        FROM users
+        WHERE username = #{username}
+    </select>
+
+    <insert id="insert" parameterType="com.yolo.garbage.model.User" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO users (username, password, role, create_time)
+        VALUES (#{username}, #{password}, #{role}, NOW())
+    </insert>
+
+    <update id="update" parameterType="com.yolo.garbage.model.User">
+        UPDATE users
+        <set>
+            <if test="username != null">
+                username = #{username},
+            </if>
+            <if test="password != null">
+                password = #{password},
+            </if>
+            <if test="role != null">
+                role = #{role},
+            </if>
+            <if test="avatar != null">
+                avatar = #{avatar}
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="delete" parameterType="java.lang.Integer">
+        DELETE FROM users
+        WHERE id = #{id}
+    </delete>
+</mapper>

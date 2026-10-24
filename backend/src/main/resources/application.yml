@@ -1,0 +1,39 @@
+spring:
+  application:
+    name: garbage-detection
+  datasource:
+    url: jdbc:mysql://localhost:3306/yolo_garbage?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+mybatis:
+  type-aliases-package: com.yolo.garbage.model
+  mapper-locations: classpath:mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: 86400000
+
+logging:
+  level:
+    com.yolo.garbage: info
+
+ai:
+  deepseek:
+    api-key: ${DEEPSEEK_API_KEY:your-deepseek-api-key}
+  glm:
+    api-key: ${GLM_API_KEY:your-glm-api-key}
+  system-prompt:
+    file: system-prompt.txt

@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yolo.garbage.dao.GarbageDataMapper">
+    <resultMap id="GarbageDataResultMap" type="com.yolo.garbage.model.GarbageData">
+        <id column="id" property="id" />
+        <result column="type_id" property="typeId" />
+        <result column="confidence" property="confidence" />
+        <result column="latitude" property="latitude" />
+        <result column="longitude" property="longitude" />
+        <result column="timestamp" property="timestamp" />
+        <result column="image_url" property="imageUrl" />
+        <result column="processed_image_url" property="processedImageUrl" />
+        <result column="create_time" property="createTime" />
+    </resultMap>
+
+    <resultMap id="GarbageDataWithTypeResultMap" type="com.yolo.garbage.model.GarbageData" extends="GarbageDataResultMap">
+        <association property="garbageType" javaType="com.yolo.garbage.model.GarbageType">
+            <id column="type_id" property="id" />
+            <result column="type_name" property="name" />
+            <result column="type_description" property="description" />
+        </association>
+    </resultMap>
+
+    <select id="selectAll" resultMap="GarbageDataWithTypeResultMap">
+        SELECT g.id, g.type_id, g.confidence, g.latitude, g.longitude, g.timestamp, g.image_url, g.processed_image_url, g.create_time,
+               gt.name as type_name, gt.description as type_description
+        FROM garbage_data g
+        LEFT JOIN garbage_types gt ON g.type_id = gt.id
+        ORDER BY g.timestamp DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <select id="selectAllForExport" resultMap="GarbageDataWithTypeResultMap">
+        SELECT g.id, g.type_id, g.confidence, g.latitude, g.longitude, g.timestamp, g.image_url, g.processed_image_url, g.create_time,
+               gt.name as type_name, gt.description as type_description
+        FROM garbage_data g
+        LEFT JOIN garbage_types gt ON g.type_id = gt.id
+        ORDER BY g.timestamp DESC
+    </select>
+
+    <select id="selectById" parameterType="java.lang.Long" resultMap="GarbageDataWithTypeResultMap">
+        SELECT g.id, g.type_id, g.confidence, g.latitude, g.longitude, g.timestamp, g.image_url, g.processed_image_url, g.create_time,
+               gt.name as type_name, gt.description as type_description
+        FROM garbage_data g
+        LEFT JOIN garbage_types gt ON g.type_id = gt.id
+        WHERE g.id = #{id}
+    </select>
+
+    <select id="selectByCondition" parameterType="java.util.Map" resultMap="GarbageDataWithTypeResultMap">
+        SELECT g.id, g.type_id, g.confidence, g.latitude, g.longitude, g.timestamp, g.image_url, g.processed_image_url, g.create_time,
+               gt.name as type_name, gt.description as type_description
+        FROM garbage_data g
+        LEFT JOIN garbage_types gt ON g.type_id = gt.id
+        WHERE 1=1
+        <if test="typeId != null">
+            AND g.type_id = #{typeId}
+        </if>
+        <if test="startTime != null">
+            AND g.timestamp >= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND g.timestamp &lt;= #{endTime}
+        </if>
+        <if test="minLatitude != null and maxLatitude != null and minLongitude != null and maxLongitude != null">
+            AND g.latitude BETWEEN #{minLatitude} AND #{maxLatitude}
+            AND g.longitude BETWEEN #{minLongitude} AND #{maxLongitude}
+        </if>
+        ORDER BY g.timestamp DESC
+        <if test="page != null and pageSize != null">
+            LIMIT #{pageSize} OFFSET #{offset}
+        </if>
+    </select>
+
+    <insert id="insert" parameterType="com.yolo.garbage.model.GarbageData" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO garbage_data (type_id, confidence, latitude, longitude, timestamp, image_url, processed_image_url, create_time)
+        VALUES (#{typeId}, #{confidence}, #{latitude}, #{longitude}, #{timestamp}, #{imageUrl}, #{processedImageUrl}, NOW())
+    </insert>
+
+    <update id="update" parameterType="com.yolo.garbage.model.GarbageData">
+        UPDATE garbage_data
+        SET type_id = #{typeId},
+            confidence = #{confidence},
+            latitude = #{latitude},
+            longitude = #{longitude},
+            timestamp = #{timestamp},
+            image_url = #{imageUrl},
+            processed_image_url = #{processedImageUrl}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="delete" parameterType="java.lang.Long">
+        DELETE FROM garbage_data
+        WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteBatch" parameterType="java.util.List">
+        DELETE FROM garbage_data
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <select id="selectStatisticsByType" parameterType="java.time.LocalDateTime" resultType="java.util.Map">
+        SELECT gt.name as typeName, COUNT(*) as count
+        FROM garbage_data g
+        LEFT JOIN garbage_types gt ON g.type_id = gt.id
+        <where>
+            <if test="startTime != null and endTime != null">
+                g.timestamp BETWEEN #{startTime} AND #{endTime}
+            </if>
+        </where>
+        GROUP BY g.type_id, gt.name
+        ORDER BY count DESC
+    </select>
+
+    <select id="selectStatisticsByTimeRange" parameterType="java.time.LocalDateTime" resultType="java.util.Map">
+        SELECT DATE_FORMAT(g.timestamp, '%Y-%m-%d') as date, COUNT(*) as count
+        FROM garbage_data g
+        <where>
+            <if test="startTime != null and endTime != null">
+                g.timestamp BETWEEN #{startTime} AND #{endTime}
+            </if>
+        </where>
+        GROUP BY DATE_FORMAT(g.timestamp, '%Y-%m-%d')
+        ORDER BY date
+    </select>
+
+    <select id="selectTotalCount" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM garbage_data g
+    </select>
+
+    <select id="selectTotalCountByCondition" parameterType="java.util.Map" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM garbage_data g
+        WHERE 1=1
+        <if test="typeId != null">
+            AND g.type_id = #{typeId}
+        </if>
+        <if test="startTime != null">
+            AND g.timestamp >= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND g.timestamp &lt;= #{endTime}
+        </if>
+        <if test="minLatitude != null and maxLatitude != null and minLongitude != null and maxLongitude != null">
+            AND g.latitude BETWEEN #{minLatitude} AND #{maxLatitude}
+            AND g.longitude BETWEEN #{minLongitude} AND #{maxLongitude}
+        </if>
+    </select>
+
+    <select id="selectByKeyword" resultMap="GarbageDataWithTypeResultMap">
+        SELECT g.id, g.type_id, g.confidence, g.latitude, g.longitude, g.timestamp, g.image_url, g.processed_image_url, g.create_time,
+               gt.name as type_name, gt.description as type_description
+        FROM garbage_data g
+        LEFT JOIN garbage_types gt ON g.type_id = gt.id
+        WHERE gt.name LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY g.timestamp DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <select id="selectTotalCountByKeyword" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM garbage_data g
+        LEFT JOIN garbage_types gt ON g.type_id = gt.id
+        WHERE gt.name LIKE CONCAT('%', #{keyword}, '%')
+    </select>
+</mapper>

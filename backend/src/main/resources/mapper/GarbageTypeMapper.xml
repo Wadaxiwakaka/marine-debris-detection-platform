@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yolo.garbage.dao.GarbageTypeMapper">
+    <resultMap id="GarbageTypeResultMap" type="com.yolo.garbage.model.GarbageType">
+        <id column="id" property="id" />
+        <result column="name" property="name" />
+        <result column="description" property="description" />
+        <result column="create_time" property="createTime" />
+    </resultMap>
+
+    <select id="selectAll" resultMap="GarbageTypeResultMap">
+        SELECT id, name, description, create_time
+        FROM garbage_types
+        ORDER BY id
+    </select>
+
+    <select id="selectById" parameterType="java.lang.Integer" resultMap="GarbageTypeResultMap">
+        SELECT id, name, description, create_time
+        FROM garbage_types
+        WHERE id = #{id}
+    </select>
+
+    <insert id="insert" parameterType="com.yolo.garbage.model.GarbageType" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO garbage_types (name, description, create_time)
+        VALUES (#{name}, #{description}, NOW())
+    </insert>
+
+    <update id="update" parameterType="com.yolo.garbage.model.GarbageType">
+        UPDATE garbage_types
+        SET name = #{name},
+            description = #{description}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="delete" parameterType="java.lang.Integer">
+        DELETE FROM garbage_types
+        WHERE id = #{id}
+    </delete>
+</mapper>
